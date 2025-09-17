@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kalkulator Tras dla Pojazdów Ciężarowych</title>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .lucide { width: 1em; height: 1em; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    <script type="text/babel">
+        const { useState, useCallback } = React;
+
+        // Simple Lucide icons as SVG components
+        const Upload = () => (
+            <svg className="lucide" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16l4-4 4 4M7 8l4-4 4 4" />
+            </svg>
+        );
+
+        const Download = () => (
+            <svg className="lucide" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8l4 4 4-4M7 16l4 4 4-4" />
+            </svg>
+        );
+
+        const Calculator = () => (
+            <svg className="lucide" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <rect x="4" y="4" width="16" height="16" rx="2" strokeWidth={2}/>
+                <line x1="9" y1="9" x2="9.01" y2="9" strokeWidth={2}/>
+                <line x1="15" y1="9" x2="15.01" y2="9" strokeWidth={2}/>
+                <line x1="9" y1="15" x2="9.01" y2="15" strokeWidth={2}/>
+                <line x1="15" y1="15" x2="15.01" y2="15" strokeWidth={2}/>
+            </svg>
+        );
+
+        const MapPin = () => (
+            <svg className="lucide" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z" />
+                <circle cx="12" cy="10" r="3" strokeWidth={2}/>
+            </svg>
+        );
+
+        const Truck = () => (
+            <svg className="lucide" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <rect x="1" y="3" width="15" height="13" strokeWidth={2}/>
+                <polygon points="16,8 20,8 23,11 23,16 16,16 16,8" strokeWidth={2}/>
+                <circle cx="5.5" cy="18.5" r="2.5" strokeWidth={2}/>
+                <circle cx="18.5" cy="18.5" r="2.5" strokeWidth={2}/>
+            </svg>
+        );
+
+        const AlertCircle = () => (
+            <svg className="lucide" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="10" strokeWidth={2}/>
+                <line x1="12" y1="8" x2="12" y2="12" strokeWidth={2}/>
+                <line x1="12" y1="16" x2="12.01" y2="16" strokeWidth={2}/>
+            </svg>
+        );
+
+        const FileText = () => (
+            <svg className="lucide" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+                <polyline points="14,2 14,8 20,8" strokeWidth={2}/>
+                <line x1="16" y1="13" x2="8" y2="13" strokeWidth={2}/>
+                <line x1="16" y1="17" x2="8" y2="17" strokeWidth={2}/>
+                <polyline points="10,9 9,9 8,9" strokeWidth={2}/>
+            </svg>
+        );
+
+        const TruckRouteCalculator = () => {
+            const [file, setFile] = useState(null);
+            const [data, setData] = useState([]);
+            const [processing, setProcessing] = useState(false);
+            const [results, setResults] = useState([]);
+            const [error, setError] = useState('');
+            const [fileContent, setFileContent] = useState('');
+
+            // Ulepszona funkcja do parsowania CSV z automatycznym wykrywaniem separatora
+            const parseCSVWithAutoDetection = (text) => {
+                console.log('Detecting CSV format...'); 
+                
+                // Wykrywanie separatora - sprawdź pierwszy wiersz
+                const firstLine = text.split('\n')[0];
+                const commaCount = (firstLine.match(/,/g) || []).length;
+                const semicolonCount = (firstLine.match(/;/g) || []).length;
+                const tabCount = (firstLine.match(/\t/g) || []).length;
+                
+                let separator = ','; // domyślny
+                if (semicolonCount > commaCount && semicolonCount > tabCount) {
+                    separator = ';';
+                } else if (tabCount > commaCount && tabCount > semicolonCount) {
+                    separator = '\t';
+                }
+                
+                console.log(`Detected separator: "${separator}" (comma: ${commaCount}, semicolon: ${semicolonCount}, tab: ${tabCount})`);
+                
+                const lines = text.split('\n').filter(line => line.trim());
+                const result = [];
+                
+                for (const line of lines) {
+                    const cells = [];
+                    let current = '';
+                    let inQuotes = false;
+                    let i = 0;
+                    
+                    while (i < line.length) {
+                        const char = line[i];
+                        
+                        if (char === '"') {
+                            if (inQuotes && i + 1 < line.length && line[i + 1] === '"') {
+                                current += '"';
+                                i += 2;
+                            } else {
+                                inQuotes = !inQuotes;
+                                i++;
+                            }
+                        } else if (char === separator && !inQuotes) {
+                            cells.push(current.trim());
+                            current = '';
+                            i++;
+                        } else {
+                            current += char;
+                            i++;
+                        }
+                    }
+                    
+                    cells.push(current.trim());
+                    
+                    const cleanedCells = cells.map(cell => {
+                        if (cell.startsWith('"') && cell.endsWith('"')) {
+                            return cell.slice(1, -1).replace(/""/g, '"');
+                        }
+                        return cell;
+                    });
+                    
+                    result.push(cleanedCells);
+                }
+                
+                console.log('Final parsed data:', result);
+                return result;
+            };
+
+            const handleFileUpload = useCallback(async (event) => {
+                const uploadedFile = event.target.files[0];
+                if (!uploadedFile) return;
+
+                try {
+                    setError('');
+                    setFile(uploadedFile);
+                    
+                    if (uploadedFile.name.endsWith('.csv')) {
+                        const text = await uploadedFile.text();
+                        setFileContent(text);
+                        console.log('Raw CSV content (first 500 chars):', text.substring(0, 500));
+                        
+                        const csvData = parseCSVWithAutoDetection(text);
+                        console.log('Parsed CSV data:', csvData);
+                        setData(csvData);
+                        
+                    } else if (uploadedFile.name.endsWith('.xlsx') || uploadedFile.name.endsWith('.xls')) {
+                        setError(`Wykryto plik Excel. Proszę przekonwertować na CSV:
+1. Otwórz plik w Excel
+2. Kliknij "Plik" → "Zapisz jako"  
+3. Wybierz format "CSV UTF-8 (rozdzielany przecinkami) (*.csv)"
+4. Wczytaj powstały plik CSV
+
+Alternatywnie kliknij "Załaduj dane testowe" aby przetestować z przykładowymi danymi.`);
+                        return;
+                    } else {
+                        throw new Error('Nieobsługiwany format pliku. Użyj CSV.');
+                    }
+                    
+                } catch (err) {
+                    setError(`Błąd wczytywania pliku: ${err.message}`);
+                }
+            }, []);
+
+            const buildAddress = (country, street, city, postalCode) => {
+                const parts = [street, city, postalCode, country].filter(part => part && part.trim());
+                return parts.join(', ');
+            };
+
+            const getSimulatedRouteData = (from, to) => {
+                const routeMap = {
+                    'hamburg_heilbronn': { distance: 520, tollCost: 45.20 },
+                    'huegelsheim_ploiesti': { distance: 1450, tollCost: 125.80 },
+                    'hull_ploiesti': { distance: 2150, tollCost: 185.50 },
+                    'ter_apelkanaal_ploiesti': { distance: 1680, tollCost: 142.30 }
+                };
+
+                const fromLower = from.toLowerCase();
+                const toLower = to.toLowerCase();
+                
+                if (fromLower.includes('hamburg') && toLower.includes('heilbronn')) {
+                    return routeMap.hamburg_heilbronn;
+                }
+                if (fromLower.includes('huegelsheim') && toLower.includes('ploiesti')) {
+                    return routeMap.huegelsheim_ploiesti;
+                }
+                if (fromLower.includes('hull') && toLower.includes('ploiesti')) {
+                    return routeMap.hull_ploiesti;
+                }
+                if (fromLower.includes('ter apelkanaal') && toLower.includes('ploiesti')) {
+                    return routeMap.ter_apelkanaal_ploiesti;
+                }
+
+                const baseDistance = estimateDistanceByCountries(from, to);
+                const tollRate = 0.08;
+                
+                return {
+                    distance: baseDistance,
+                    tollCost: Math.round(baseDistance * tollRate * 100) / 100
+                };
+            };
+
+            const estimateDistanceByCountries = (from, to) => {
+                const countryDistances = {
+                    'germany_germany': 400,
+                    'germany_romania': 1400,
+                    'uk_romania': 2100,
+                    'netherlands_romania': 1650,
+                    'germany_poland': 600,
+                    'poland_germany': 600
+                };
+
+                const fromCountry = extractCountry(from);
+                const toCountry = extractCountry(to);
+                const key = `${fromCountry}_${toCountry}`;
+                
+                return countryDistances[key] || 1000;
+            };
+
+            const extractCountry = (address) => {
+                const addressLower = address.toLowerCase();
+                if (addressLower.includes('germany') || addressLower.includes('niemcy')) return 'germany';
+                if (addressLower.includes('romania') || addressLower.includes('rumunia')) return 'romania';
+                if (addressLower.includes('united kingdom') || addressLower.includes('uk') || addressLower.includes('wielka brytania')) return 'uk';
+                if (addressLower.includes('netherlands') || addressLower.includes('holandia')) return 'netherlands';
+                if (addressLower.includes('poland') || addressLower.includes('polska')) return 'poland';
+                return 'unknown';
+            };
+
+            const calculateRoute = async (fromAddress, toAddress) => {
+                try {
+                    await new Promise(resolve => setTimeout(resolve, 500 + Math.random() * 500));
+                    const routeData = getSimulatedRouteData(fromAddress, toAddress);
+                    
+                    return {
+                        distance: routeData.distance,
+                        tollCost: routeData.tollCost,
+                        success: true
+                    };
+                } catch (error) {
+                    return {
+                        distance: 0,
+                        tollCost: 0,
+                        success: false,
+                        error: error.message
+                    };
+                }
+            };
+
+            const processRoutes = async () => {
+                if (data.length < 2) return;
+
+                setProcessing(true);
+                setError('');
+                const newResults = [];
+
+                try {
+                    const headers = data[0];
+                    console.log('Headers:', headers);
+                    
+                    const rows = data.slice(1).filter(row => row.some(cell => cell && cell.toString().trim()));
+                    console.log('Filtered rows:', rows);
+
+                    for (let i = 0; i < rows.length; i++) {
+                        const row = rows[i];
+                        console.log(`Processing row ${i + 1}:`, row);
+                        
+                        if (!row || row.length === 0) continue;
+
+                        const itemName = row[0] || '';
+                        const loadingCountry = row[1] || '';
+                        const loadingStreet = row[2] || '';
+                        const loadingCity = row[3] || '';
+                        const loadingPostal = row[4] || '';
+                        
+                        const deliveryCountry = row[5] || '';
+                        const deliveryStreet = row[6] || '';
+                        const deliveryCity = row[7] || '';
+                        const deliveryPostal = row[8] || '';
+
+                        console.log(`Row ${i + 1} data:`, {
+                            itemName,
+                            loadingCountry,
+                            loadingCity,
+                            deliveryCountry, 
+                            deliveryCity
+                        });
+
+                        if (!loadingCity || !deliveryCity || loadingCity.toString().trim() === '' || deliveryCity.toString().trim() === '') {
+                            console.log(`Row ${i + 1}: Missing city data`);
+                            newResults.push({
+                                rowIndex: i,
+                                from: loadingCity || 'Brak miasta załadunku',
+                                to: deliveryCity || 'Brak miasta rozładunku', 
+                                distance: 0,
+                                tollCost: 0,
+                                status: `Błąd: Brak danych miasta (Loading: "${loadingCity}", Delivery: "${deliveryCity}")`
+                            });
+                            continue;
+                        }
+
+                        const fromAddress = buildAddress(loadingCountry, loadingStreet, loadingCity, loadingPostal);
+                        const toAddress = buildAddress(deliveryCountry, deliveryStreet, deliveryCity, deliveryPostal);
+
+                        console.log(`Row ${i + 1} addresses:`, { fromAddress, toAddress });
+
+                        const result = await calculateRoute(fromAddress, toAddress);
+                        
+                        newResults.push({
+                            rowIndex: i,
+                            from: fromAddress,
+                            to: toAddress, 
+                            distance: result.distance,
+                            tollCost: result.tollCost,
+                            status: result.success ? 'OK' : `Błąd: ${result.error}`
+                        });
+                    }
+
+                    console.log('Final results:', newResults);
+                    setResults(newResults);
+                } catch (err) {
+                    console.error('Processing error:', err);
+                    setError(`Błąd przetwarzania: ${err.message}`);
+                } finally {
+                    setProcessing(false);
+                }
+            };
+
+            const downloadUpdatedFile = () => {
+                if (!data.length || !results.length) return;
+
+                try {
+                    const updatedData = [...data];
+                    
+                    results.forEach(result => {
+                        const rowIndex = result.rowIndex;
+                        if (updatedData[rowIndex + 1]) {
+                            while (updatedData[rowIndex + 1].length < 11) {
+                                updatedData[rowIndex + 1].push('');
+                            }
+                            updatedData[rowIndex + 1][9] = result.distance;
+                            updatedData[rowIndex + 1][10] = result.tollCost;
+                        }
+                    });
+
+                    const csvContent = updatedData.map(row => 
+                        row.map(cell => {
+                            const cellStr = cell?.toString() || '';
+                            if (cellStr.includes(',') || cellStr.includes('"') || cellStr.includes('\n')) {
+                                return `"${cellStr.replace(/"/g, '""')}"`;
+                            }
+                            return cellStr;
+                        }).join(',')
+                    ).join('\n');
+
+                    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8' });
+                    const url = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = 'PRZEETAG_zaktualizowany.csv';
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    URL.revokeObjectURL(url);
+                } catch (err) {
+                    setError(`Błąd pobierania pliku: ${err.message}`);
+                }
+            };
+
+            const downloadSampleCSV = () => {
+                const sampleData = [
+                    ['Item Name', 'Loading Location Country', 'Supply Location Street', 'Loading Location City', 'Loading Location Postal code', 'Delivery Location Country', 'Delivery Location Street', 'Delivery Location City', 'Delivery Location Postal code', 'Dystans w km', 'Opłaty drogowe'],
+                    ['L2416_HAMBURG - HEILBRONN_AMBIENT', 'GERMANY', 'PORGESRING 13', 'HAMBURG', '22113', 'GERMANY', 'HAFENSTRASSE 95', 'HEILBRONN', '74076', '', ''],
+                    ['L2417_HUEGELSHEIM - PLOIESTI_AMBIENT', 'GERMANY', 'CALGARY AVENUE A400', 'HUEGELSHEIM', '76549', 'ROMANIA', 'REPUBLICII AVENUE,NO 291', 'PLOIESTI', '100568', '', ''],
+                    ['L2418_HULL - PLOIESTI_AMBIENT', 'UNITED KINGDOM', 'HEDON ROAD', 'HULL', 'HU9 5NX', 'ROMANIA', 'REPUBLICII AVENUE,NO 291', 'PLOIESTI', '100568', '', ''],
+                    ['L2107_TER APELKANAAL - PLOIESTI_AMBIENT', 'NETHERLANDS', 'LOODSWEG 5', 'TER APELKANAAL', '9563 TW', 'ROMANIA', 'REPUBLICII AVENUE,NO 291', 'PLOIESTI', '100568', '', '']
+                ];
+
+                const csvContent = sampleData.map(row => 
+                    row.map(cell => {
+                        const cellStr = cell?.toString() || '';
+                        if (cellStr.includes(',') || cellStr.includes('"') || cellStr.includes('\n')) {
+                            return `"${cellStr.replace(/"/g, '""')}"`;
+                        }
+                        return cellStr;
+                    }).join(',')
+                ).join('\n');
+
+                console.log('Generated CSV content:', csvContent);
+
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = 'PRZEETAG_szablon.csv';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+            };
+
+            const loadTestData = () => {
+                const testData = [
+                    ['Item Name', 'Loading Location Country', 'Supply Location Street', 'Loading Location City', 'Loading Location Postal code', 'Delivery Location Country', 'Delivery Location Street', 'Delivery Location City', 'Delivery Location Postal code', 'Dystans w km', 'Opłaty drogowe'],
+                    ['L2416_HAMBURG - HEILBRONN_AMBIENT', 'GERMANY', 'PORGESRING 13', 'HAMBURG', '22113', 'GERMANY', 'HAFENSTRASSE 95', 'HEILBRONN', '74076', '', ''],
+                    ['L2417_HUEGELSHEIM - PLOIESTI_AMBIENT', 'GERMANY', 'CALGARY AVENUE A400', 'HUEGELSHEIM', '76549', 'ROMANIA', 'REPUBLICII AVENUE,NO 291', 'PLOIESTI', '100568', '', ''],
+                    ['L2418_HULL - PLOIESTI_AMBIENT', 'UNITED KINGDOM', 'HEDON ROAD', 'HULL', 'HU9 5NX', 'ROMANIA', 'REPUBLICII AVENUE,NO 291', 'PLOIESTI', '100568', '', ''],
+                    ['L2107_TER APELKANAAL - PLOIESTI_AMBIENT', 'NETHERLANDS', 'LOODSWEG 5', 'TER APELKANAAL', '9563 TW', 'ROMANIA', 'REPUBLICII AVENUE,NO 291', 'PLOIESTI', '100568', '', '']
+                ];
+                
+                setData(testData);
+                setFile({ name: 'test_data.csv' });
+                console.log('Test data loaded:', testData);
+            };
+
+            return React.createElement('div', { className: "max-w-6xl mx-auto p-6 bg-white" },
+                React.createElement('div', { className: "mb-8" },
+                    React.createElement('h1', { className: "text-3xl font-bold text-gray-900 mb-2 flex items-center gap-3" },
+                        React.createElement(Truck, { className: "text-blue-600" }),
+                        "Kalkulator Tras dla Pojazdów Ciężarowych"
+                    ),
+                    React.createElement('p', { className: "text-gray-600 mb-4" },
+                        "Wczytaj plik CSV z punktami załadunku i rozładunku, aby obliczyć dystanse i opłaty drogowe"
+                    ),
+                    
+                    React.createElement('div', { className: "bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6" },
+                        React.createElement('div', { className: "flex items-start gap-3" },
+                            React.createElement(FileText, { className: "h-5 w-5 text-yellow-600 mt-0.5" }),
+                            React.createElement('div', { className: "flex-1" },
+                                React.createElement('h3', { className: "font-medium text-yellow-800 mb-2" }, "Instrukcje dla pliku Excel"),
+                                React.createElement('p', { className: "text-yellow-700 text-sm mb-3" },
+                                    "Jeśli masz plik Excel (.xlsx), zapisz go jako CSV przed wczytaniem:"
+                                ),
+                                React.createElement('ol', { className: "text-yellow-700 text-sm space-y-1 mb-3 ml-4" },
+                                    React.createElement('li', null, "1. Otwórz plik w Excel"),
+                                    React.createElement('li', null, "2. Kliknij \"Plik\" → \"Zapisz jako\""),
+                                    React.createElement('li', null, "3. Wybierz format \"CSV UTF-8 (rozdzielany przecinkami) (*.csv)\""),
+                                    React.createElement('li', null, "4. Zapisz i wczytaj tutaj plik CSV")
+                                ),
+                                React.createElement('div', { className: "flex gap-2" },
+                                    React.createElement('button', {
+                                        onClick: downloadSampleCSV,
+                                        className: "bg-yellow-600 text-white px-4 py-2 rounded text-sm hover:bg-yellow-700 transition-colors"
+                                    }, "Pobierz przykładowy plik CSV"),
+                                    React.createElement('button', {
+                                        onClick: loadTestData,
+                                        className: "bg-blue-600 text-white px-4 py-2 rounded text-sm hover:bg-blue-700 transition-colors"
+                                    }, "Załaduj dane testowe"),
+                                    data.length > 0 && React.createElement('button', {
+                                        onClick: () => {
+                                            setData([]);
+                                            setFile(null);
+                                            setResults([]);
+                                            setError('');
+                                        },
+                                        className: "bg-gray-600 text-white px-4 py-2 rounded text-sm hover:bg-gray-700 transition-colors"
+                                    }, "Wyczyść dane")
+                                )
+                            )
+                        )
+                    )
+                ),
+
+                React.createElement('div', { className: "mb-8" },
+                    React.createElement('div', { className: "border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-blue-400 transition-colors" },
+                        React.createElement(Upload, { className: "mx-auto h-12 w-12 text-gray-400 mb-4" }),
+                        React.createElement('label', { htmlFor: "file-upload", className: "cursor-pointer" },
+                            React.createElement('span', { className: "text-lg font-medium text-gray-700" },
+                                "Kliknij aby wybrać plik CSV"
+                            ),
+                            React.createElement('input', {
+                                id: "file-upload",
+                                type: "file",
+                                accept: ".csv",
+                                onChange: handleFileUpload,
+                                className: "hidden"
+                            })
+                        ),
+                        file && React.createElement('p', { className: "mt-2 text-sm text-gray-500" },
+                            "Wybrano: " + file.name
+                        )
+                    )
+                ),
+
+                error && React.createElement('div', { className: "mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3" },
+                    React.createElement(AlertCircle, { className: "h-5 w-5 text-red-500 mt-0.5" }),
+                    React.createElement('div', { className: "text-red-700" }, error)
+                ),
+
+                data.length > 0 && React.createElement('div', { className: "mb-8" },
+                    React.createElement('h2', { className: "text-xl font-semibold text-gray-900 mb-4" }, "Podgląd danych"),
+                    React.createElement('div', { className: "bg-gray-50 rounded-lg p-4 overflow-x-auto" },
+                        React.createElement('table', { className: "min-w-full text-sm" },
+                            React.createElement('thead', null,
+                                React.createElement('tr', { className: "bg-gray-100" },
+                                    data[0] && data[0].map((header, index) =>
+                                        React.createElement('th', { key: index, className: "px-3 py-2 text-left font-medium text-gray-700" }, header)
+                                    )
+                                )
+                            ),
+                            React.createElement('tbody', null,
+                                data.slice(1, 6).map((row, rowIndex) => 
+                                    row.some(cell => cell && cell.toString().trim()) && 
+                                    React.createElement('tr', { key: rowIndex, className: "border-t border-gray-200" },
+                                        row.map((cell, cellIndex) =>
+                                            React.createElement('td', { key: cellIndex, className: "px-3 py-2 text-gray-600" }, cell || '-')
+                                        )
+                                    )
+                                )
+                            )
+                        )
+                    )
+                ),
+
+                data.length > 0 && React.createElement('div', { className: "mb-8 text-center" },
+                    React.createElement('button', {
+                        onClick: processRoutes,
+                        disabled: processing,
+                        className: "bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 transition-colors flex items-center gap-2 mx-auto"
+                    },
+                        React.createElement(Calculator, { className: "h-5 w-5" }),
+                        processing ? 'Obliczanie tras...' : 'Oblicz trasy i opłaty'
+                    )
+                ),
+
+                results.length > 0 && React.createElement('div', { className: "mb-8" },
+                    React.createElement('h2', { className: "text-xl font-semibold text-gray-900 mb-4" }, "Wyniki obliczeń"),
+                    React.createElement('div', { className: "bg-white border border-gray-200 rounded-lg overflow-hidden" },
+                        React.createElement('table', { className: "min-w-full" },
+                            React.createElement('thead', { className: "bg-gray-50" },
+                                React.createElement('tr', null,
+                                    React.createElement('th', { className: "px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" }, "Wiersz"),
+                                    React.createElement('th', { className: "px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" },
+                                        React.createElement(MapPin, { className: "inline h-4 w-4 mr-1" }), "Z"
+                                    ),
+                                    React.createElement('th', { className: "px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" },
+                                        React.createElement(MapPin, { className: "inline h-4 w-4 mr-1" }), "Do"
+                                    ),
+                                    React.createElement('th', { className: "px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" }, "Dystans (km)"),
+                                    React.createElement('th', { className: "px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" }, "Opłaty (€)"),
+                                    React.createElement('th', { className: "px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" }, "Status")
+                                )
+                            ),
+                            React.createElement('tbody', { className: "bg-white divide-y divide-gray-200" },
+                                results.map((result, index) =>
+                                    React.createElement('tr', { key: index, className: "hover:bg-gray-50" },
+                                        React.createElement('td', { className: "px-6 py-4 whitespace-nowrap text-sm text-gray-900" }, result.rowIndex + 2),
+                                        React.createElement('td', { className: "px-6 py-4 text-sm text-gray-600 max-w-xs truncate" }, result.from),
+                                        React.createElement('td', { className: "px-6 py-4 text-sm text-gray-600 max-w-xs truncate" }, result.to),
+                                        React.createElement('td', { className: "px-6 py-4 whitespace-nowrap text-sm text-gray-900" }, 
+                                            result.distance > 0 ? result.distance.toLocaleString() : '-'
+                                        ),
+                                        React.createElement('td', { className: "px-6 py-4 whitespace-nowrap text-sm text-gray-900" },
+                                            result.tollCost > 0 ? `€${result.tollCost.toFixed(2)}` : '-'
+                                        ),
+                                        React.createElement('td', { className: "px-6 py-4 whitespace-nowrap" },
+                                            React.createElement('span', {
+                                                className: `px-2 py-1 text-xs font-semibold rounded-full ${
+                                                    result.status === 'OK' 
+                                                        ? 'bg-green-100 text-green-800'
+                                                        : 'bg-red-100 text-red-800'
+                                                }`
+                                            }, result.status)
+                                        )
+                                    )
+                                )
+                            )
+                        )
+                    )
+                ),
+
+                results.length > 0 && React.createElement('div', { className: "text-center" },
+                    React.createElement('button', {
+                        onClick: downloadUpdatedFile,
+                        className: "bg-green-600 text-white px-8 py-3 rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2 mx-auto"
+                    },
+                        React.createElement(Download, { className: "h-5 w-5" }),
+                        "Pobierz zaktualizowany plik CSV"
+                    )
+                ),
+
+                React.createElement('div', { className: "mt-12 bg-blue-50 rounded-lg p-6" },
+                    React.createElement('h3', { className: "text-lg font-semibold text-blue-900 mb-3" }, "Informacje o aplikacji"),
+                    React.createElement('ul', { className: "text-blue-800 space-y-2 text-sm" },
+                        React.createElement('li', null, "• Aplikacja oblicza dystanse dla tras pojazdów ciężarowych z uwzględnieniem ograniczeń drogowych"),
+                        React.createElement('li', null, "• Opłaty drogowe są szacowane na podstawie średnich stawek europejskich dla pojazdów ciężarowych"),
+                        React.createElement('li', null, "• Wyniki są zapisywane do kolumn J (Dystans w km) i K (Opłaty drogowe)"),
+                        React.createElement('li', null, "• W wersji produkcyjnej można zintegrować z API Google Routes, HERE Maps lub TomTom"),
+                        React.createElement('li', null, "• Obsługuje format CSV (pliki Excel należy przekonwertować)")
+                    )
+                )
+            );
+        };
+
+        ReactDOM.render(React.createElement(TruckRouteCalculator), document.getElementById('root'));
+    </script>
+</body>
+</html>
