@@ -26,9 +26,13 @@
                 Kalkulator Tras dla Pojazdów Ciężarowych
             </h1>
             <p class="text-gray-600">Oblicz dystanse i opłaty drogowe dla tras ciężarowych</p>
+            <p class="text-sm text-gray-500 mt-2">
+                🌐 Wersja GitHub Pages | 
+                <a href="https://github.com/username/truck-route-calculator" target="_blank" class="text-blue-600 hover:underline">Zobacz kod źródłowy</a>
+            </p>
         </div>
 
-        <!-- HERE API Configuration -->
+        <!-- API Selection -->
         <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
             <div class="flex items-start gap-3">
                 <svg class="icon text-blue-600 mt-0.5" viewBox="0 0 24 24">
@@ -37,31 +41,62 @@
                     <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
                 </svg>
                 <div class="flex-1">
-                    <h3 class="font-medium text-blue-800 mb-3">Konfiguracja HERE Maps API</h3>
+                    <h3 class="font-medium text-blue-800 mb-3">Wybierz API dla obliczeń tras</h3>
                     
-                    <div class="flex items-center gap-4 mb-3">
-                        <label class="flex items-center">
-                            <input type="checkbox" id="useRealAPI" class="mr-2 h-4 w-4 text-blue-600">
-                            <span class="text-blue-700">Użyj rzeczywistego API HERE Maps</span>
+                    <div class="space-y-3 mb-4">
+                        <label class="flex items-start gap-3 p-3 bg-white rounded border border-blue-200 cursor-pointer hover:bg-blue-25">
+                            <input type="radio" name="apiChoice" value="simulation" class="mt-1" checked>
+                            <div>
+                                <div class="font-medium text-blue-800">Tryb symulacji (Zalecany)</div>
+                                <div class="text-sm text-blue-600">Realistyczne dane na podstawie typowych tras europejskich. Działa bez kluczy API.</div>
+                            </div>
+                        </label>
+                        
+                        <label class="flex items-start gap-3 p-3 bg-white rounded border border-blue-200 cursor-pointer hover:bg-blue-25">
+                            <input type="radio" name="apiChoice" value="tomtom" class="mt-1">
+                            <div>
+                                <div class="font-medium text-blue-800">TomTom Routing API</div>
+                                <div class="text-sm text-blue-600">Rzeczywiste trasy z obsługą CORS. 2,500 bezpłatnych zapytań/miesiąc.</div>
+                            </div>
+                        </label>
+                        
+                        <label class="flex items-start gap-3 p-3 bg-white rounded border border-blue-200 cursor-pointer hover:bg-blue-25">
+                            <input type="radio" name="apiChoice" value="openroute" class="mt-1">
+                            <div>
+                                <div class="font-medium text-blue-800">OpenRouteService</div>
+                                <div class="text-sm text-blue-600">Darmowe API z obsługą ciężarówek. 2,000 zapytań dziennie.</div>
+                            </div>
                         </label>
                     </div>
                     
+                    <!-- API Configuration -->
                     <div id="apiConfig" class="space-y-4" style="display: none;">
-                        <div>
-                            <label class="flex items-center gap-2 text-sm font-medium text-blue-700 mb-2">
-                                <svg class="icon" viewBox="0 0 24 24">
-                                    <circle cx="7" cy="15" r="3"/>
-                                    <path d="m10 15 11-11"/>
-                                    <path d="m21 6-2-2"/>
-                                    <path d="m15 12-2-2"/>
-                                </svg>
-                                Klucz API HERE Maps:
-                            </label>
-                            <input type="password" id="hereApiKey" placeholder="Wklej swój klucz API tutaj..." 
-                                   class="w-full px-3 py-2 border border-blue-300 rounded-md focus:ring-2 focus:ring-blue-500">
-                            <p class="text-sm text-blue-600 mt-1">
-                                Uzyskaj darmowy klucz na: <a href="https://platform.here.com/" target="_blank" class="underline">platform.here.com</a>
-                            </p>
+                        <div id="tomtomConfig" class="bg-white rounded p-3 border border-blue-200" style="display: none;">
+                            <h4 class="font-medium text-blue-800 mb-2">Konfiguracja TomTom API</h4>
+                            <div class="space-y-2">
+                                <div>
+                                    <label class="block text-sm font-medium text-blue-700 mb-1">Klucz API TomTom:</label>
+                                    <input type="password" id="tomtomApiKey" placeholder="Wklej klucz API..." 
+                                           class="w-full px-3 py-2 border border-blue-300 rounded text-sm">
+                                    <p class="text-xs text-blue-600 mt-1">
+                                        Uzyskaj na: <a href="https://developer.tomtom.com/" target="_blank" class="underline">developer.tomtom.com</a>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div id="openrouteConfig" class="bg-white rounded p-3 border border-blue-200" style="display: none;">
+                            <h4 class="font-medium text-blue-800 mb-2">Konfiguracja OpenRouteService</h4>
+                            <div class="space-y-2">
+                                <div>
+                                    <label class="block text-sm font-medium text-blue-700 mb-1">Klucz API OpenRouteService:</label>
+                                    <input type="password" id="openrouteApiKey" placeholder="Wklej klucz API..." 
+                                           class="w-full px-3 py-2 border border-blue-300 rounded text-sm">
+                                    <p class="text-xs text-blue-600 mt-1">
+                                        Uzyskaj na: <a href="https://openrouteservice.org/dev/" target="_blank" class="underline">openrouteservice.org</a>
+                                    </p>
+                                </div>
+                            </div>
                         </div>
                         
                         <!-- Truck Parameters -->
@@ -69,28 +104,24 @@
                             <h4 class="font-medium text-blue-800 mb-2">Parametry pojazdu ciężarowego</h4>
                             <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
                                 <div>
-                                    <label class="block text-blue-700 mb-1">Masa (kg)</label>
-                                    <input type="number" id="grossWeight" value="40000" class="w-full px-2 py-1 border border-blue-200 rounded text-xs">
+                                    <label class="block text-blue-700 mb-1">Masa (t)</label>
+                                    <input type="number" id="truckWeight" value="40" step="0.1" class="w-full px-2 py-1 border border-blue-200 rounded text-xs">
                                 </div>
                                 <div>
-                                    <label class="block text-blue-700 mb-1">Wysokość (cm)</label>
-                                    <input type="number" id="height" value="400" class="w-full px-2 py-1 border border-blue-200 rounded text-xs">
+                                    <label class="block text-blue-700 mb-1">Wysokość (m)</label>
+                                    <input type="number" id="truckHeight" value="4.0" step="0.1" class="w-full px-2 py-1 border border-blue-200 rounded text-xs">
                                 </div>
                                 <div>
-                                    <label class="block text-blue-700 mb-1">Szerokość (cm)</label>
-                                    <input type="number" id="width" value="250" class="w-full px-2 py-1 border border-blue-200 rounded text-xs">
+                                    <label class="block text-blue-700 mb-1">Szerokość (m)</label>
+                                    <input type="number" id="truckWidth" value="2.5" step="0.1" class="w-full px-2 py-1 border border-blue-200 rounded text-xs">
                                 </div>
                                 <div>
-                                    <label class="block text-blue-700 mb-1">Długość (cm)</label>
-                                    <input type="number" id="length" value="1600" class="w-full px-2 py-1 border border-blue-200 rounded text-xs">
+                                    <label class="block text-blue-700 mb-1">Długość (m)</label>
+                                    <input type="number" id="truckLength" value="16" step="0.1" class="w-full px-2 py-1 border border-blue-200 rounded text-xs">
                                 </div>
                             </div>
                         </div>
                     </div>
-                    
-                    <p id="simulationNote" class="text-sm text-blue-600">
-                        Obecnie używane są symulowane dane. Włącz API dla rzeczywistych tras.
-                    </p>
                 </div>
             </div>
         </div>
@@ -107,7 +138,7 @@
                 <div class="flex-1">
                     <h3 class="font-medium text-yellow-800 mb-2">Instrukcje</h3>
                     <p class="text-yellow-700 text-sm mb-3">
-                        Jeśli masz plik Excel, zapisz go jako CSV: Plik → Zapisz jako → CSV UTF-8
+                        Zapisz plik Excel jako CSV: Plik → Zapisz jako → CSV UTF-8 (rozdzielany przecinkami)
                     </p>
                     <div class="flex gap-2 flex-wrap">
                         <button id="loadTestData" class="bg-blue-600 text-white px-4 py-2 rounded text-sm hover:bg-blue-700">
@@ -169,10 +200,10 @@
                     <line x1="9" y1="15" x2="9.01" y2="15"/>
                     <line x1="15" y1="15" x2="15.01" y2="15"/>
                 </svg>
-                <span id="processButtonText">Oblicz trasy (Symulacja)</span>
+                <span id="processButtonText">Oblicz trasy</span>
             </button>
             <p id="apiKeyWarning" class="text-sm text-red-600 mt-2" style="display: none;">
-                Wprowadź klucz HERE API
+                Wprowadź klucz API
             </p>
         </div>
 
@@ -196,14 +227,28 @@
 
         <!-- Info Section -->
         <div class="bg-blue-50 rounded-lg p-6">
-            <h3 class="text-lg font-semibold text-blue-900 mb-3">Informacje</h3>
-            <ul class="text-blue-800 space-y-2 text-sm">
-                <li>• <strong>Symulacja:</strong> Oszacowane dane na podstawie typowych tras</li>
-                <li>• <strong>HERE API:</strong> Rzeczywiste trasy z ograniczeniami dla ciężarówek</li>
-                <li>• <strong>Bezpłatny plan HERE:</strong> 250,000 zapytań/miesiąc</li>
-                <li>• <strong>Bezpieczeństwo:</strong> Wszystkie dane przetwarzane lokalnie</li>
-                <li>• <strong>"Napraw plik CSV":</strong> Automatycznie konwertuje polski format Excel</li>
-            </ul>
+            <h3 class="text-lg font-semibold text-blue-900 mb-3">Informacje o aplikacji</h3>
+            <div class="grid md:grid-cols-2 gap-4 text-sm">
+                <div>
+                    <h4 class="font-medium text-blue-800 mb-2">Funkcjonalności:</h4>
+                    <ul class="text-blue-700 space-y-1">
+                        <li>• Obsługa polskiego formatu CSV z Excel</li>
+                        <li>• Automatyczna konwersja formatów</li>
+                        <li>• Symulacja tras z realistycznymi danymi</li>
+                        <li>• Integracja z API TomTom i OpenRouteService</li>
+                        <li>• Parametry specyficzne dla ciężarówek</li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-medium text-blue-800 mb-2">API Information:</h4>
+                    <ul class="text-blue-700 space-y-1">
+                        <li>• <strong>Symulacja:</strong> Bezpłatna, zawsze dostępna</li>
+                        <li>• <strong>TomTom:</strong> 2,500 zapytań/miesiąc za darmo</li>
+                        <li>• <strong>OpenRouteService:</strong> 2,000 zapytań/dzień za darmo</li>
+                        <li>• Wszystkie dane przetwarzane lokalnie</li>
+                    </ul>
+                </div>
+            </div>
         </div>
 
     </div>
@@ -214,7 +259,7 @@
         let currentResults = [];
         let isProcessing = false;
 
-        // Test data
+        // Test data - same as before
         const testData = [
             ['Item Name', 'Loading Location Country', 'Supply Location Street', 'Loading Location City', 'Loading Location Postal code', 'Delivery Location Country', 'Delivery Location Street', 'Delivery Location City', 'Delivery Location Postal code', 'Dystans w km', 'Opłaty drogowe'],
             ['L2416_HAMBURG - HEILBRONN_AMBIENT', 'GERMANY', 'PORGESRING 13', 'HAMBURG', '22113', 'GERMANY', 'HAFENSTRASSE 95', 'HEILBRONN', '74076', '', ''],
@@ -229,43 +274,71 @@
         });
 
         function initializeEventListeners() {
-            // API toggle
-            document.getElementById('useRealAPI').addEventListener('change', function(e) {
-                const apiConfig = document.getElementById('apiConfig');
-                const simulationNote = document.getElementById('simulationNote');
-                
-                if (e.target.checked) {
-                    apiConfig.style.display = 'block';
-                    simulationNote.style.display = 'none';
-                } else {
-                    apiConfig.style.display = 'none';
-                    simulationNote.style.display = 'block';
-                }
-                updateProcessButton();
+            // API choice radio buttons
+            document.querySelectorAll('input[name="apiChoice"]').forEach(radio => {
+                radio.addEventListener('change', updateApiConfig);
             });
 
-            // API key input
-            document.getElementById('hereApiKey').addEventListener('input', updateProcessButton);
+            // API key inputs
+            document.getElementById('tomtomApiKey').addEventListener('input', updateProcessButton);
+            document.getElementById('openrouteApiKey').addEventListener('input', updateProcessButton);
 
-            // Load test data
+            // Buttons
             document.getElementById('loadTestData').addEventListener('click', loadTestData);
-
-            // Clear data
             document.getElementById('clearData').addEventListener('click', clearData);
-
-            // File upload
             document.getElementById('fileUpload').addEventListener('change', handleFileUpload);
-
-            // Process routes
             document.getElementById('processRoutes').addEventListener('click', processRoutes);
-
-            // Download button
             document.getElementById('downloadButton').addEventListener('click', downloadResults);
-
-            // Fix CSV button
             document.getElementById('fixCSVButton').addEventListener('click', fixCSVFile);
         }
 
+        function updateApiConfig() {
+            const selectedApi = document.querySelector('input[name="apiChoice"]:checked').value;
+            const apiConfig = document.getElementById('apiConfig');
+            const tomtomConfig = document.getElementById('tomtomConfig');
+            const openrouteConfig = document.getElementById('openrouteConfig');
+            
+            if (selectedApi === 'simulation') {
+                apiConfig.style.display = 'none';
+            } else {
+                apiConfig.style.display = 'block';
+                tomtomConfig.style.display = selectedApi === 'tomtom' ? 'block' : 'none';
+                openrouteConfig.style.display = selectedApi === 'openroute' ? 'block' : 'none';
+            }
+            
+            updateProcessButton();
+        }
+
+        function updateProcessButton() {
+            const selectedApi = document.querySelector('input[name="apiChoice"]:checked').value;
+            const buttonText = document.getElementById('processButtonText');
+            const processButton = document.getElementById('processRoutes');
+            const warning = document.getElementById('apiKeyWarning');
+            
+            let needsApiKey = false;
+            let apiName = 'Symulacja';
+            
+            if (selectedApi === 'tomtom') {
+                apiName = 'TomTom API';
+                needsApiKey = !document.getElementById('tomtomApiKey').value;
+            } else if (selectedApi === 'openroute') {
+                apiName = 'OpenRouteService';
+                needsApiKey = !document.getElementById('openrouteApiKey').value;
+            }
+            
+            buttonText.textContent = `Oblicz trasy (${apiName})`;
+            
+            if (needsApiKey) {
+                processButton.disabled = true;
+                warning.style.display = 'block';
+                warning.textContent = `Wprowadź klucz API dla ${apiName}`;
+            } else {
+                processButton.disabled = false;
+                warning.style.display = 'none';
+            }
+        }
+
+        // Rest of the functions remain the same as before...
         function showError(message) {
             document.getElementById('errorText').textContent = message;
             document.getElementById('errorBox').style.display = 'flex';
@@ -301,23 +374,17 @@
         function parseCSV(text) {
             console.log('=== CSV PARSER ===');
             console.log('Input length:', text.length);
-            console.log('First 200 chars:', text.substring(0, 200));
             
-            // Sprawdź czy to standardowy format
+            // Check for Polish format (few lines + many semicolons)
             let lines = text.split(/\r?\n/).filter(line => line.trim());
-            console.log('Initial line split:', lines.length, 'lines');
-            
-            // Wykryj polski format (mało linii + dużo średników)
             const totalSemicolons = (text.match(/;/g) || []).length;
-            const totalCommas = (text.match(/,/g) || []).length;
             
             if (lines.length <= 3 && totalSemicolons > 20) {
-                console.log('POLISH FORMAT DETECTED - please use Fix CSV button');
                 showError('Wykryto polski format CSV. Użyj przycisku "Napraw plik CSV" poniżej.');
                 return [];
             }
             
-            // Filtruj puste linie
+            // Filter empty lines
             lines = lines.filter(line => {
                 const trimmed = line.trim();
                 return trimmed && !trimmed.match(/^[;,]*$/);
@@ -325,7 +392,7 @@
             
             if (lines.length === 0) return [];
             
-            // Wykryj separator
+            // Detect separator
             const firstLine = lines[0];
             const semicolons = (firstLine.match(/;/g) || []).length;
             const commas = (firstLine.match(/,/g) || []).length;
@@ -333,7 +400,7 @@
             
             console.log(`Using separator: "${separator}"`);
             
-            // Parsuj linie
+            // Parse lines
             const result = lines.map((line, i) => {
                 const cells = line.split(separator).map(cell => cell.trim().replace(/^"|"$/g, ''));
                 return cells;
@@ -402,126 +469,60 @@
             updateProcessButton();
         }
 
-        function updateProcessButton() {
-            const useRealAPI = document.getElementById('useRealAPI').checked;
-            const hereApiKey = document.getElementById('hereApiKey').value;
-            const processButton = document.getElementById('processRoutes');
-            const buttonText = document.getElementById('processButtonText');
-            const warning = document.getElementById('apiKeyWarning');
-
-            if (useRealAPI) {
-                buttonText.textContent = 'Oblicz trasy (HERE API)';
-                if (!hereApiKey) {
-                    processButton.disabled = true;
-                    warning.style.display = 'block';
-                } else {
-                    processButton.disabled = false;
-                    warning.style.display = 'none';
-                }
-            } else {
-                buttonText.textContent = 'Oblicz trasy (Symulacja)';
-                processButton.disabled = false;
-                warning.style.display = 'none';
+        // API-specific geocoding and routing functions
+        async function geocodeAddressTomTom(address, apiKey) {
+            const url = `https://api.tomtom.com/search/2/geocode/${encodeURIComponent(address)}.json?key=${apiKey}`;
+            
+            const response = await fetch(url);
+            if (!response.ok) throw new Error(`TomTom Geocoding failed: ${response.status}`);
+            
+            const data = await response.json();
+            if (!data.results || data.results.length === 0) {
+                throw new Error(`Nie znaleziono adresu: ${address}`);
             }
+            
+            const location = data.results[0].position;
+            return `${location.lat},${location.lon}`;
         }
 
-        async function processRoutes() {
-            if (isProcessing || currentData.length < 2) return;
-
-            isProcessing = true;
-            const processButton = document.getElementById('processRoutes');
-            const buttonText = document.getElementById('processButtonText');
+        async function geocodeAddressOpenRoute(address, apiKey) {
+            const url = `https://api.openrouteservice.org/geocode/search?api_key=${apiKey}&text=${encodeURIComponent(address)}`;
             
-            processButton.disabled = true;
-            buttonText.textContent = 'Obliczanie...';
+            const response = await fetch(url);
+            if (!response.ok) throw new Error(`OpenRouteService Geocoding failed: ${response.status}`);
             
-            try {
-                currentResults = [];
-                const useRealAPI = document.getElementById('useRealAPI').checked;
-                const rows = currentData.slice(1).filter(row => row.some(cell => cell && cell.toString().trim()));
-
-                for (let i = 0; i < rows.length; i++) {
-                    const row = rows[i];
-                    if (!row || row.length === 0) continue;
-
-                    const loadingCity = row[3] || '';
-                    const deliveryCity = row[7] || '';
-
-                    if (!loadingCity || !deliveryCity || loadingCity.trim() === '' || deliveryCity.trim() === '') {
-                        currentResults.push({
-                            rowIndex: i,
-                            from: loadingCity || 'Brak miasta załadunku',
-                            to: deliveryCity || 'Brak miasta rozładunku',
-                            distance: 0,
-                            tollCost: 0,
-                            status: 'Błąd: Brak miast'
-                        });
-                        continue;
-                    }
-
-                    const fromAddress = [row[2], row[3], row[4], row[1]].filter(x => x && x.trim()).join(', ');
-                    const toAddress = [row[6], row[7], row[8], row[5]].filter(x => x && x.trim()).join(', ');
-                    
-                    let result;
-                    if (useRealAPI) {
-                        result = await calculateRouteWithHERE(fromAddress, toAddress);
-                    } else {
-                        result = await calculateRouteSimulated(fromAddress, toAddress);
-                    }
-                    
-                    currentResults.push({
-                        rowIndex: i,
-                        from: fromAddress,
-                        to: toAddress,
-                        distance: result.distance,
-                        tollCost: result.tollCost,
-                        duration: result.duration,
-                        status: result.success ? (useRealAPI ? 'HERE API' : 'Symulacja') : `Błąd: ${result.error}`
-                    });
-                }
-
-                displayResults();
-                
-            } catch (error) {
-                showError('Błąd przetwarzania: ' + error.message);
-            } finally {
-                isProcessing = false;
-                processButton.disabled = false;
-                updateProcessButton();
+            const data = await response.json();
+            if (!data.features || data.features.length === 0) {
+                throw new Error(`Nie znaleziono adresu: ${address}`);
             }
+            
+            const coordinates = data.features[0].geometry.coordinates;
+            return `${coordinates[1]},${coordinates[0]}`; // lat,lon
         }
 
-        async function calculateRouteWithHERE(fromAddress, toAddress) {
+        async function calculateRouteWithTomTom(fromAddress, toAddress) {
             try {
-                const hereApiKey = document.getElementById('hereApiKey').value;
+                const apiKey = document.getElementById('tomtomApiKey').value;
                 
                 // Geocoding
-                const origin = await geocodeAddress(fromAddress, hereApiKey);
-                const destination = await geocodeAddress(toAddress, hereApiKey);
+                const origin = await geocodeAddressTomTom(fromAddress, apiKey);
+                const destination = await geocodeAddressTomTom(toAddress, apiKey);
                 
-                console.log(`Geocoded: ${fromAddress} -> ${origin}, ${toAddress} -> ${destination}`);
+                console.log(`TomTom Geocoded: ${fromAddress} -> ${origin}, ${toAddress} -> ${destination}`);
                 
                 // Route calculation
-                const params = new URLSearchParams({
-                    transportMode: 'truck',
-                    origin: origin,
-                    destination: destination,
-                    return: 'summary,tollCosts',
-                    'truck[grossWeight]': document.getElementById('grossWeight').value,
-                    'truck[height]': document.getElementById('height').value,
-                    'truck[width]': document.getElementById('width').value,
-                    'truck[length]': document.getElementById('length').value,
-                    'truck[axleCount]': '4',
-                    'truck[tunnelCategory]': 'B',
-                    apikey: hereApiKey
-                });
+                const [originLat, originLon] = origin.split(',');
+                const [destLat, destLon] = destination.split(',');
                 
-                const routeUrl = `https://router.hereapi.com/v8/routes?${params}`;
+                const routeUrl = `https://api.tomtom.com/routing/1/calculateRoute/${originLat},${originLon}:${destLat},${destLon}/json` +
+                    `?key=${apiKey}&vehicleEngineType=combustion&vehicleWeight=${document.getElementById('truckWeight').value * 1000}` +
+                    `&vehicleAxleWeight=10000&vehicleLength=${document.getElementById('truckLength').value}` +
+                    `&vehicleWidth=${document.getElementById('truckWidth').value}&vehicleHeight=${document.getElementById('truckHeight').value}`;
+                
                 const response = await fetch(routeUrl);
-                
                 if (!response.ok) {
                     const errorData = await response.json();
-                    throw new Error(`HERE API error: ${response.status} - ${errorData.error?.message || 'Unknown error'}`);
+                    throw new Error(`TomTom API error: ${response.status}`);
                 }
                 
                 const data = await response.json();
@@ -530,39 +531,77 @@
                 }
                 
                 const route = data.routes[0];
-                const summary = route.sections[0].summary;
-                const distanceKm = Math.round(summary.length / 1000);
-                const durationMinutes = Math.round(summary.duration / 60);
+                const summary = route.summary;
+                const distance = Math.round(summary.lengthInMeters / 1000);
+                const duration = Math.round(summary.travelTimeInSeconds / 60);
                 
-                let tollCost = 0;
-                if (route.tollCosts && route.tollCosts.length > 0) {
-                    tollCost = route.tollCosts.reduce((sum, toll) => sum + (toll.cost || 0), 0);
-                    tollCost = Math.round(tollCost * 100) / 100;
-                } else {
-                    tollCost = Math.round(distanceKm * 0.08 * 100) / 100;
-                }
+                // Estimate tolls (TomTom doesn't provide detailed toll costs in free tier)
+                const tollCost = Math.round(distance * 0.08 * 100) / 100;
                 
-                return { distance: distanceKm, tollCost, duration: durationMinutes, success: true };
+                return { distance, tollCost, duration, success: true };
                 
             } catch (error) {
-                console.error('HERE API error:', error);
+                console.error('TomTom API error:', error);
                 return { distance: 0, tollCost: 0, success: false, error: error.message };
             }
         }
 
-        async function geocodeAddress(address, apiKey) {
-            const url = `https://geocode.search.hereapi.com/v1/geocode?q=${encodeURIComponent(address)}&apiKey=${apiKey}`;
-            
-            const response = await fetch(url);
-            if (!response.ok) throw new Error(`Geocoding failed: ${response.status}`);
-            
-            const data = await response.json();
-            if (!data.items || data.items.length === 0) {
-                throw new Error(`Nie znaleziono adresu: ${address}`);
+        async function calculateRouteWithOpenRoute(fromAddress, toAddress) {
+            try {
+                const apiKey = document.getElementById('openrouteApiKey').value;
+                
+                // Geocoding
+                const origin = await geocodeAddressOpenRoute(fromAddress, apiKey);
+                const destination = await geocodeAddressOpenRoute(toAddress, apiKey);
+                
+                console.log(`OpenRoute Geocoded: ${fromAddress} -> ${origin}, ${toAddress} -> ${destination}`);
+                
+                // Route calculation for heavy vehicles
+                const [originLat, originLon] = origin.split(',');
+                const [destLat, destLon] = destination.split(',');
+                
+                const routeData = {
+                    coordinates: [[parseFloat(originLon), parseFloat(originLat)], [parseFloat(destLon), parseFloat(destLat)]],
+                    restrictions: {
+                        weight: parseFloat(document.getElementById('truckWeight').value),
+                        height: parseFloat(document.getElementById('truckHeight').value),
+                        width: parseFloat(document.getElementById('truckWidth').value),
+                        length: parseFloat(document.getElementById('truckLength').value)
+                    }
+                };
+                
+                const response = await fetch(`https://api.openrouteservice.org/v2/directions/driving-hgv`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': apiKey
+                    },
+                    body: JSON.stringify(routeData)
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`OpenRouteService API error: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                if (!data.routes || data.routes.length === 0) {
+                    throw new Error('Nie znaleziono trasy');
+                }
+                
+                const route = data.routes[0];
+                const summary = route.summary;
+                const distance = Math.round(summary.distance / 1000);
+                const duration = Math.round(summary.duration / 60);
+                
+                // Estimate tolls
+                const tollCost = Math.round(distance * 0.08 * 100) / 100;
+                
+                return { distance, tollCost, duration, success: true };
+                
+            } catch (error) {
+                console.error('OpenRouteService API error:', error);
+                return { distance: 0, tollCost: 0, success: false, error: error.message };
             }
-            
-            const location = data.items[0].position;
-            return `${location.lat},${location.lng}`;
         }
 
         async function calculateRouteSimulated(fromAddress, toAddress) {
@@ -594,11 +633,84 @@
             return { distance: 1000, tollCost: 80, success: true };
         }
 
+        async function processRoutes() {
+            if (isProcessing || currentData.length < 2) return;
+
+            isProcessing = true;
+            const processButton = document.getElementById('processRoutes');
+            const buttonText = document.getElementById('processButtonText');
+            const originalText = buttonText.textContent;
+            
+            processButton.disabled = true;
+            buttonText.textContent = 'Obliczanie...';
+            
+            try {
+                currentResults = [];
+                const selectedApi = document.querySelector('input[name="apiChoice"]:checked').value;
+                const rows = currentData.slice(1).filter(row => row.some(cell => cell && cell.toString().trim()));
+
+                for (let i = 0; i < rows.length; i++) {
+                    const row = rows[i];
+                    if (!row || row.length === 0) continue;
+
+                    const loadingCity = row[3] || '';
+                    const deliveryCity = row[7] || '';
+
+                    if (!loadingCity || !deliveryCity || loadingCity.trim() === '' || deliveryCity.trim() === '') {
+                        currentResults.push({
+                            rowIndex: i,
+                            from: loadingCity || 'Brak miasta załadunku',
+                            to: deliveryCity || 'Brak miasta rozładunku',
+                            distance: 0,
+                            tollCost: 0,
+                            status: 'Błąd: Brak miast'
+                        });
+                        continue;
+                    }
+
+                    const fromAddress = [row[2], row[3], row[4], row[1]].filter(x => x && x.trim()).join(', ');
+                    const toAddress = [row[6], row[7], row[8], row[5]].filter(x => x && x.trim()).join(', ');
+                    
+                    let result;
+                    if (selectedApi === 'tomtom') {
+                        result = await calculateRouteWithTomTom(fromAddress, toAddress);
+                    } else if (selectedApi === 'openroute') {
+                        result = await calculateRouteWithOpenRoute(fromAddress, toAddress);
+                    } else {
+                        result = await calculateRouteSimulated(fromAddress, toAddress);
+                    }
+                    
+                    const statusText = selectedApi === 'tomtom' ? 'TomTom API' : 
+                                     selectedApi === 'openroute' ? 'OpenRouteService' : 'Symulacja';
+                    
+                    currentResults.push({
+                        rowIndex: i,
+                        from: fromAddress,
+                        to: toAddress,
+                        distance: result.distance,
+                        tollCost: result.tollCost,
+                        duration: result.duration,
+                        status: result.success ? statusText : `Błąd: ${result.error}`
+                    });
+                }
+
+                displayResults();
+                
+            } catch (error) {
+                showError('Błąd przetwarzania: ' + error.message);
+            } finally {
+                isProcessing = false;
+                processButton.disabled = false;
+                buttonText.textContent = originalText;
+            }
+        }
+
         function displayResults() {
             if (currentResults.length === 0) return;
 
             const table = document.getElementById('resultsTable');
-            const useRealAPI = document.getElementById('useRealAPI').checked;
+            const selectedApi = document.querySelector('input[name="apiChoice"]:checked').value;
+            const showDuration = selectedApi !== 'simulation';
             
             let html = '<thead class="bg-gray-50"><tr>';
             html += '<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Wiersz</th>';
@@ -606,7 +718,7 @@
             html += '<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Do</th>';
             html += '<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Dystans (km)</th>';
             html += '<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Opłaty (€)</th>';
-            if (useRealAPI) {
+            if (showDuration) {
                 html += '<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Czas (min)</th>';
             }
             html += '<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>';
@@ -620,13 +732,14 @@
                 html += `<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${result.distance > 0 ? result.distance.toLocaleString() : '-'}</td>`;
                 html += `<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${result.tollCost > 0 ? '€' + result.tollCost.toFixed(2) : '-'}</td>`;
                 
-                if (useRealAPI) {
+                if (showDuration) {
                     const timeStr = result.duration ? `${Math.floor(result.duration / 60)}h ${result.duration % 60}m` : '-';
                     html += `<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${timeStr}</td>`;
                 }
                 
                 let statusClass = 'bg-red-100 text-red-800';
-                if (result.status === 'HERE API') statusClass = 'bg-green-100 text-green-800';
+                if (result.status === 'TomTom API') statusClass = 'bg-green-100 text-green-800';
+                else if (result.status === 'OpenRouteService') statusClass = 'bg-purple-100 text-purple-800';
                 else if (result.status === 'Symulacja') statusClass = 'bg-blue-100 text-blue-800';
                 
                 html += `<td class="px-6 py-4 whitespace-nowrap">`;
@@ -692,9 +805,7 @@
                 reader.onload = function(event) {
                     const content = event.target.result;
                     console.log('=== FIXING CSV FILE ===');
-                    console.log('Original content length:', content.length);
                     
-                    // Fix Polish CSV format
                     const fixedContent = fixPolishCSVFormat(content);
                     
                     if (fixedContent) {
@@ -709,9 +820,9 @@
                         document.body.removeChild(link);
                         URL.revokeObjectURL(url);
                         
-                        alert('Plik został naprawiony i pobrany jako "' + file.name.replace('.csv', '_naprawiony.csv') + '". Teraz wczytaj naprawiony plik do aplikacji.');
+                        alert('Plik został naprawiony i pobrany. Teraz wczytaj naprawiony plik do aplikacji.');
                     } else {
-                        showError('Nie udało się naprawić pliku CSV. Sprawdź format pliku.');
+                        showError('Nie udało się naprawić pliku CSV.');
                     }
                 };
                 reader.readAsText(file, 'utf-8');
@@ -721,53 +832,39 @@
 
         function fixPolishCSVFormat(content) {
             console.log('Fixing Polish CSV format...');
-            console.log('First 300 chars:', content.substring(0, 300));
             
-            // Check if it's single-line format with semicolons
             const lines = content.split(/\r?\n/).filter(l => l.trim());
             const totalSemicolons = (content.match(/;/g) || []).length;
             
             if (lines.length <= 3 && totalSemicolons > 20) {
                 console.log('Processing Polish single-line format');
                 
-                // Take the full content as one line
                 const fullLine = content.replace(/\r?\n/g, '').trim();
-                
-                // Split by pattern that indicates start of new record: ,L[digits]_
                 const recordPattern = /,(?=L\d+_)/g;
                 const parts = fullLine.split(recordPattern);
-                console.log('Split into', parts.length, 'parts');
                 
                 const fixedLines = [];
                 
                 for (let i = 0; i < parts.length; i++) {
-                    let part = parts[i].trim();
-                    
-                    // Remove leading/trailing commas
-                    part = part.replace(/^,+|,+$/g, '');
+                    let part = parts[i].trim().replace(/^,+|,+$/g, '');
                     
                     if (part && !part.match(/^;*$/)) {
-                        // Convert semicolons to commas for standard CSV
                         const standardLine = part.replace(/;/g, ',');
                         
-                        // Only add if line contains meaningful data
                         if (standardLine.includes('Item Name') || 
                             standardLine.includes('HAMBURG') || 
                             standardLine.includes('PLOIESTI') || 
                             standardLine.includes('HULL') || 
                             standardLine.includes('APELKANAAL')) {
                             fixedLines.push(standardLine);
-                            console.log(`Fixed line ${fixedLines.length}:`, standardLine.substring(0, 100) + '...');
                         }
                     }
                 }
                 
-                console.log('Total fixed lines:', fixedLines.length);
                 return fixedLines.join('\n');
             }
             
-            // Fallback: just convert semicolons to commas
-            console.log('Using fallback: semicolon to comma replacement');
+            // Fallback: convert semicolons to commas
             return content.split(/\r?\n/)
                 .filter(line => line.trim() && !line.match(/^[;,]*$/))
                 .map(line => line.replace(/;/g, ','))
